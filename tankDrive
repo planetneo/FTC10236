@@ -1,0 +1,152 @@
+package com.qualcomm.ftcrobotcontroller.opmodes;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
+
+/**
+ * Created by ralabastro20 on 10/29/15.
+ *
+ * Please feel free to edit and change code as needed...
+ * This is just template
+ */
+public class tankDrive extends OpMode {
+
+    /*
+     Note constants are not final values yet. Further testing required until done.
+     As arm approaches the value of 0, arm moves up.
+     */
+
+    final static double ARM_MIN_RANGE = 0.20;
+    final static double ARM_MAX_RANGE = 0.90;
+
+    final static double extARM_MIN_RANGE = 0.20;
+    final static double extARM_MAX_RANGE = 0.20;
+
+
+    //position of the arm
+    double armPosition;
+    double extArmPosition;
+
+    //Amount needed to change the arm's position.
+    //e.g. if 0.2 was assigned to armDelta, it would need 0.2 to change position.
+    double armDelta;
+    double extArmDelta;
+
+    //Relative to back of robot.
+    DcMotor motorRight;
+    DcMotor motorLeft;
+
+    //Arm
+    DcMotor arm1;
+    DcMotor arm2;
+
+    DcMotor extArm1;
+    DcMotor extArm2;
+
+    public tankDrive()
+    {
+
+    }
+
+    public void init()
+    {
+        //Hardware maps Motors for drivebase
+        motorLeft = hardwareMap.dcMotor.get("motor_1");
+        motorRight = hardwareMap.dcMotor.get("motor_2");
+        motorLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        //Hardware map Motors for arm
+        arm1 = hardwareMap.dcMotor.get("motor_3");
+        arm2 = hardwareMap.dcMotor.get("motor_4");
+
+        extArm1 = hardwareMap.dcMotor.get("motor_5");
+        extArm2 = hardwareMap.dcMotor.get("motor_6");
+
+        //Assign start position of arm
+        armPosition = 0.2;
+        extArmPosition = 0.2;
+    }
+
+    public void loop()
+    {
+        //Controls drive. Forward and backward
+        float left = -gamepad1.left_stick_y;
+        float right = -gamepad1.right_stick_y;
+
+        //Doesn't let value exceed 1 or below 1.
+        left = Range.clip(left, -1, 1);
+        right = Range.clip(right, -1, 1);
+
+        //Makes it easier to drive precisely at slower speeds.
+        left = (float)scaleInput(left);
+        right = (float)scaleInput(right);
+
+        motorRight.setPower(right);
+        motorLeft.setPower(left);
+
+        if(gamepad1.a)
+        {
+            armPosition += armDelta;
+            extArmDelta += extArmDelta;
+        }
+
+        if(gamepad1.y)
+        {
+            armPosition -= armDelta;
+            extArmDelta -= extArmDelta;
+        }
+
+        armPosition = Range.clip(armPosition, ARM_MIN_RANGE, ARM_MAX_RANGE);
+        extArmPosition = Range.clip(extArmPosition, extARM_MIN_RANGE, extARM_MAX_RANGE);
+
+        //arm1.setPosition(armPosition);
+
+        telemetry.addData("Text", "*** RobotData ***");
+        telemetry.addData("arm", "arm:" + String.format("%.2f", armPosition));
+        telemetry.addData("extArm", "extArm: " + String.format("%.2f", extArmPosition));
+        telemetry.addData("left tgt pwr", "left pwr: " + String.format("%.2f", left));
+        telemetry.addData("right tgt pwr", "right pwr: " + String.format("%.2f", right));
+
+    }
+
+    public void stop()
+    {
+
+    }
+
+    double scaleInput(double dVal)  {
+        double[] scaleArray = { 0.0, 0.05, 0.09, 0.10, 0.12, 0.15, 0.18, 0.24,
+                0.30, 0.36, 0.43, 0.50, 0.60, 0.72, 0.85, 1.00, 1.00 };
+
+        // get the corresponding index for the scaleInput array.
+        int index = (int) (dVal * 16.0);
+
+        // index should be positive.
+        if (index < 0) {
+            index = -index;
+        }
+
+        // index cannot exceed size of array minus 1.
+        if (index > 16) {
+            index = 16;
+        }
+
+        // get value from the array.
+        double dScale = 0.0;
+        if (dVal < 0) {
+            dScale = -scaleArray[index];
+        } else {
+            dScale = scaleArray[index];
+        }
+
+        // return scaled value.
+        return dScale;
+    }
+
+
+
+
+
+}
